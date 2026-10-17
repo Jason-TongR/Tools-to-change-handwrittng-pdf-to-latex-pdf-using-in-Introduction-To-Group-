@@ -1,0 +1,13 @@
+# Local homework input and generated conversion folders
+*.pdf
+*_latex/
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+
+# Python bytecode
+__pycache__/
+*.py[cod]

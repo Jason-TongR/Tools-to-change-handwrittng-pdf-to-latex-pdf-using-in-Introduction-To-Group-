@@ -11,6 +11,7 @@ import re
 import shutil
 import subprocess
 import sys
+from urllib.parse import urlparse
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -42,13 +43,21 @@ def find_tool(name: str) -> str:
 
 
 def default_template_path() -> Path:
+    repository_root = Path(__file__).resolve().parent.parent
     candidates = [
-        Path(__file__).resolve().parent.parent / "Jason的群论作业" / "TemplateHW.tex",
+        repository_root / "Uri Onn作业模板" / "TemplateHW.tex",
         Path(__file__).resolve().parent / "TemplateHW.tex",
     ]
     for candidate in candidates:
         if candidate.is_file():
             return candidate
+
+    discovered = sorted(repository_root.glob("*/TemplateHW.tex"))
+    if len(discovered) == 1:
+        return discovered[0]
+    if len(discovered) > 1:
+        choices = ", ".join(str(path.relative_to(repository_root)) for path in discovered)
+        raise RuntimeError(f"Multiple templates found ({choices}); pass the desired one with --template")
     raise RuntimeError("Could not find TemplateHW.tex; pass --template explicitly")
 
 
@@ -116,6 +125,7 @@ def transcribe_images(
     api_key: str,
     timeout: int,
     max_tokens: int,
+    reasoning_effort: str = "low",
     prompt: str = DEFAULT_PROMPT,
 ) -> str:
     image_parts = []
@@ -130,19 +140,28 @@ def transcribe_images(
         image_parts.append(
             {
                 "type": "image_url",
-                "image_url": {"url": f"data:image/jpeg;base64,{encoded}", "detail": "high"},
+                "image_url": {"url": f"data:image/jpeg;base64,{encoded}"},
             }
         )
 
-    request_body = {
+    request_body: dict[str, Any] = {
         "model": model,
         "messages": [
             {"role": "system", "content": prompt},
             {"role": "user", "content": image_parts},
         ],
-        "temperature": 0,
-        "max_tokens": max_tokens,
     }
+    hostname = (urlparse(api_url).hostname or "").lower()
+    use_kimi_format = model.lower() == "kimi-k3" or hostname.endswith(
+        ("moonshot.cn", "kimi.com")
+    )
+    if use_kimi_format:
+        request_body["max_completion_tokens"] = max_tokens
+        if model.lower() == "kimi-k3":
+            request_body["reasoning_effort"] = reasoning_effort
+    else:
+        request_body["temperature"] = 0
+        request_body["max_tokens"] = max_tokens
     request = urllib.request.Request(
         api_url,
         data=json.dumps(request_body, ensure_ascii=False).encode("utf-8"),
@@ -158,8 +177,22 @@ def transcribe_images(
         with urllib.request.urlopen(request, timeout=timeout) as response:
             response_payload = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as error:
-        # Do not print provider response bodies; they may echo request data.
-        raise RuntimeError(f"Vision API returned HTTP {error.code}") from error
+        detail = ""
+        try:
+            error_payload = json.loads(error.read().decode("utf-8", errors="replace"))
+            error_object = error_payload.get("error", {}) if isinstance(error_payload, dict) else {}
+            if isinstance(error_object, dict):
+                detail = str(error_object.get("message", ""))
+        except (json.JSONDecodeError, AttributeError):
+            pass
+        if api_key:
+            detail = detail.replace(api_key, "[redacted]")
+        detail = re.sub(r"(?i)bearer\s+\S+", "Bearer [redacted]", detail)
+        detail = " ".join(detail.split())[:500]
+        message = f"Vision API returned HTTP {error.code}"
+        if detail:
+            message += f": {detail}"
+        raise RuntimeError(message) from error
     except urllib.error.URLError as error:
         raise RuntimeError(f"Could not connect to the vision API: {error.reason}") from error
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
@@ -247,7 +280,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--template",
         type=Path,
-        help="Teacher's TemplateHW.tex (auto-detected from Jason的群论作业/ by default)",
+        help="Teacher's TemplateHW.tex (defaults to Uri Onn作业模板/TemplateHW.tex)",
     )
     parser.add_argument("-o", "--output-dir", type=Path, help="Output folder (default: <PDF name>_latex)")
     parser.add_argument("--mode", choices=("both", "visual", "faithful"), default="both")
@@ -256,7 +289,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--assignment", help="Replace the assignment number in the header")
     parser.add_argument("--dpi", type=int, default=160, help="Page image resolution, 72-300 DPI (default: 160)")
     parser.add_argument("--timeout", type=int, default=240, help="API request timeout in seconds (default: 240)")
-    parser.add_argument("--max-tokens", type=int, default=16000, help="Maximum API response tokens")
+    parser.add_argument(
+        "--max-completion-tokens",
+        "--max-tokens",
+        dest="max_tokens",
+        type=int,
+        default=16000,
+        help="Maximum completion tokens (default: 16000; --max-tokens remains an alias)",
+    )
+    parser.add_argument(
+        "--reasoning-effort",
+        choices=("low", "high", "max"),
+        default="low",
+        help="Kimi K3 reasoning effort (default: low)",
+    )
     parser.add_argument("--prompt-file", type=Path, help="Optional UTF-8 file with custom transcription instructions")
     parser.add_argument("--compile", action="store_true", help="Compile generated .tex files using pdflatex")
     return parser.parse_args()
@@ -347,6 +393,7 @@ def main() -> int:
                 api_key=api_key,
                 timeout=args.timeout,
                 max_tokens=args.max_tokens,
+                reasoning_effort=args.reasoning_effort,
                 prompt=prompt,
             )
             tex_path = output_dir / "transcription.tex"
