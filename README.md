@@ -248,9 +248,47 @@ if ($env:MOONSHOT_API_KEY) { "API key is set" }
 
 ## 5. 开始使用！在仓库根目录运行脚本
 
-先打开 VS Code，选中这个仓库根目录，打开集成终端，然后切到仓库根目录。下面的命令假设当前目录正是本仓库根目录。
+按下面两步操作即可。先在 VS Code 中打开本仓库，然后选择“终端 → 新建终端”。确认终端当前目录是仓库根目录，也就是能看到 `README.md` 的目录。
 
-请把自己的手写作业 PDF 放在 `你的手写笔记请放在这个文件夹/` 目录中，不要放进 `手写pdf转换latex脚本工具/`。目录结构如下：
+### 第一步：放入 PDF 并设置 API Key
+
+把手写作业 PDF 放进 `你的手写笔记请放在这个文件夹/`。下面的示例假设文件名为 `作业一.pdf`；如果文件名不同，后面的命令中也要换成你的实际文件名。
+
+在当前终端设置 API Key。把引号里的示例文字替换成你自己的 Kimi API Key，然后执行：
+
+Linux / macOS / VS Code 的 bash 或 zsh 终端：
+
+```bash
+export MOONSHOT_API_KEY='在这里粘贴你自己的Kimi_API_Key'
+```
+
+Windows PowerShell：
+
+```powershell
+$env:MOONSHOT_API_KEY = '在这里粘贴你自己的Kimi_API_Key'
+```
+
+这个设置只对当前终端有效；关闭终端后，重新运行脚本时需要再设置一次。不要把真实 API Key 写进仓库文件或发给别人。
+
+### 第二步：复制命令并执行
+
+选择与你使用的终端对应的命令。把示例中的 `StudentName`、学号和作业编号替换成自己的信息；如果 PDF 不叫 `作业一.pdf`，也要替换命令里的文件名。当前使用 `pdflatex` 编译，姓名请使用拼音或英文字母，不要直接填中文，否则会出现 `Unicode character ... not set up for use with LaTeX` 错误。整行复制到终端后按 Enter（生成过程可能需要3到4分钟，如果终端没动是正常的，等待即可）。
+
+Linux / macOS / bash / zsh：
+
+```bash
+python3 "手写pdf转换latex脚本工具/handwriting_to_latex.py" "你的手写笔记请放在这个文件夹/作业一.pdf" --api-url "https://api.moonshot.cn/v1/chat/completions" --model "kimi-k3" --api-key-env MOONSHOT_API_KEY --author "StudentName" --student-id "000000" --assignment 1 --compile
+```
+
+Windows PowerShell：
+
+```powershell
+py "手写pdf转换latex脚本工具/handwriting_to_latex.py" "你的手写笔记请放在这个文件夹/作业一.pdf" --api-url "https://api.moonshot.cn/v1/chat/completions" --model "kimi-k3" --api-key-env MOONSHOT_API_KEY --author "StudentName" --student-id "000000" --assignment 1 --compile
+```
+
+命令成功后，终端会显示输出目录。结果默认保存在 PDF 同目录下、以 `_latex` 结尾的文件夹中。`--compile` 会额外生成 PDF 预览，因此需要已经安装 LaTeX 并能运行 `pdflatex`。
+
+示例目录结构：
 
 ```text
 Tools-to-change-handwrittng-pdf-to-latex-pdf-using-in-Introduction-To-Group-/
@@ -262,45 +300,9 @@ Tools-to-change-handwrittng-pdf-to-latex-pdf-using-in-Introduction-To-Group-/
 └── ...
 ```
 
-在仓库根目录打开终端后，输入文件路径要带上这个文件夹名：
+PDF 文件名可以包含中文或空格，因为命令已经用引号括起文件路径。如果 PDF 放在别的目录，把命令中的 PDF 路径换成它的路径即可。
 
-```bash
-python3 "手写pdf转换latex脚本工具/handwriting_to_latex.py" "你的手写笔记请放在这个文件夹/手写作业.pdf" ...
-```
-
-也可以把实际 PDF 文件拖到终端中，让终端自动填入完整路径。转换结果默认生成在输入 PDF 旁边。
-
-如果你把 PDF 放在别的文件夹里，也可以写那个文件的路径，例如：
-
-```bash
-python3 "手写pdf转换latex脚本工具/handwriting_to_latex.py" "/Users/你/Downloads/作业一.pdf" ...
-```
-
-文件名可以使用中文或空格；命令中的路径用引号括起来即可。
-
-### 5.1 运行示例（推荐新手先使用）
-
-把 `手写作业.pdf` 换成目录中的真实 PDF 文件名，并把 `你的姓名`、`你的学号` 替换掉：
-
-```bash
-python3 "手写pdf转换latex脚本工具/handwriting_to_latex.py" \
-  "你的手写笔记请放在这个文件夹/手写作业.pdf" \
-  --api-url "https://api.moonshot.cn/v1/chat/completions" \
-  --model "kimi-k3" \
-  --api-key-env MOONSHOT_API_KEY \
-  --author "你的姓名" \
-  --student-id "你的学号" \
-  --assignment 1 \
-  --compile
-```
-
-Windows PowerShell：
-
-```powershell
-py "手写pdf转换latex脚本工具/handwriting_to_latex.py" "你的手写笔记请放在这个文件夹/手写作业.pdf" --api-url "https://api.moonshot.cn/v1/chat/completions" --model "kimi-k3" --api-key-env MOONSHOT_API_KEY --author "你的姓名" --student-id "你的学号" --assignment 1 --compile
-```
-
-### 5.2 这个命令中每个参数是干什么的
+### 5.1 命令参数说明
 
 - `你的手写笔记请放在这个文件夹/手写作业.pdf`：输入的手写作业 PDF 文件；
 - `--api-url`：模型服务的接口地址；
@@ -313,7 +315,7 @@ py "手写pdf转换latex脚本工具/handwriting_to_latex.py" "你的手写笔�
 - `--template`：如果老师换模板，可显式指定模板路径；
 - `-o`：输出目录别名，避免覆盖旧结果。
 
-### 5.3 可选：不调用模型，只生成原件视觉版
+### 5.2 可选：不调用模型，只生成原件视觉版
 
 如果你只是想保留手写作业的视觉效果，不需要转成可编辑 LaTeX，可以直接执行：
 
@@ -333,15 +335,15 @@ python3 "手写pdf转换latex脚本工具/handwriting_to_latex.py" "你的手写
 你的手写笔记请放在这个文件夹/
 ├── 作业一.pdf
 └── 作业一_latex/
-├── transcription.tex
-├── transcription.pdf
-├── transcription_body.tex
-├── faithful.tex
-├── faithful.pdf
-├── pages/
-├── source.pdf
-├── manifest.json
-└── ...
+  ├── transcription.tex
+  ├── transcription.pdf
+  ├── transcription_body.tex
+  ├── faithful.tex
+  ├── faithful.pdf
+  ├── pages/
+  ├── source.pdf
+  ├── manifest.json
+  └── ...
 ```
 
 这些文件的含义：
