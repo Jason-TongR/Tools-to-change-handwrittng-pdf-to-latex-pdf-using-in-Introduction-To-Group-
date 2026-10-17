@@ -1,0 +1,451 @@
+\documentclass[11pt]{article}
+
+\usepackage{graphicx}
+\usepackage{amsfonts}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage[latin1]{inputenc}
+\usepackage{fancyhdr}
+\usepackage{layout}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{framed}
+\setcounter{MaxMatrixCols}{10}
+
+\setlength{\voffset}{-1in}
+\setlength{\topmargin}{1cm}
+\setlength{\headheight}{1cm}
+\setlength{\headsep}{1cm}
+\setlength{\textheight}{24cm}
+\setlength{\footskip}{1.2cm}
+\setlength{\evensidemargin}{0in}
+\setlength{\oddsidemargin}{0cm}
+\setlength{\textwidth}{17cm}
+\setlength{\marginparsep}{0cm}
+\setlength{\marginparwidth}{0cm}
+\pagestyle{fancy}
+\rhead{Introduction to Group Theory - 1040158\\ Guangdong Technion}
+\lhead{{\large\scshape Homework Assignment 1 \\ Winter - 2026}}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\newcounter{ej}
+\renewcommand{\theej}{\textbf{\arabic{ej}.}}
+\newenvironment{ej}{
+    \stepcounter{ej}
+    \begin{list}{\theej}{
+        \setlength{\itemindent}{0ex}
+        \setlength{\labelwidth}{4ex}
+        \setlength{\labelsep}{0.5ex}
+        \setlength{\leftmargin}{4ex}
+        \setlength{\listparindent}{0ex}
+        \setlength{\topsep}{3mm plus 0.5mm minus 0.5mm}
+        \setlength{\parsep}{0mm}
+        \setlength{\itemsep}{1mm plus 0.3mm minus 0.3mm}
+        \setlength{\rightmargin}{0ex}
+    }
+    \item
+}{\end{list}}
+\renewcommand{\labelenumi}{$($\alph{enumi}$)$ }
+
+\definecolor{shadecolor}{gray}{0.92}
+\newenvironment{sol}{
+    \def\FrameCommand##1{\fcolorbox{black}{gray!20}{##1}}%
+    \MakeFramed{\advance\hsize-\width \FrameRestore}%
+    \noindent\textbf{Answer:} \ignorespaces
+}{\endMakeFramed}
+
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Q}{\mathbb{Q}}
+
+\begin{document}
+    \thispagestyle{fancy}
+
+    \begin{center}
+        \large Autor: Rui Tang \\
+        ID: 999025489
+    \end{center}
+
+    \begin{ej}
+        Determine whether the following composition laws are associative,
+        whether they are commutative and whether they have an identity:
+        \begin{enumerate}
+            \item $(x,y)\mapsto x-y$ on $\Z$;
+            \item $(x,y)\mapsto x+y+xy$ on $\Z$; on $\Q\setminus\{-1\}$.
+        \end{enumerate}
+        Does any of them define a group structure? justify!
+
+        \begin{sol}
+            \textbf{(a)}
+
+            \textbf{Associativity: No!}
+            \begin{align*}
+                ((x,y),z) &= (x-y,z)=(x-y)-z=x-y-z,\\
+                (x,(y,z)) &= (x,y-z)=x-(y-z)=x-y+z.
+            \end{align*}
+            \[
+                x-y-z\ne x-y+z\quad\text{in }\Z
+            \]
+
+            \textbf{Commutative: No!}
+            \[
+                (x,y)=x-y,\qquad (y,x)=y-x
+            \]
+            \[
+                x-y\ne y-x\quad\text{in }\Z
+            \]
+
+            \textbf{Identity: No!}
+
+            Suppose we have the identity called $e$. Then it satisfies, for
+            every $x\in\Z$,
+            \[
+                (x,e)=x\quad\text{(1)},\qquad
+                (e,x)=x\quad\text{(2)}.
+            \]
+            \begin{align*}
+                \text{(1)}&\iff x-e=x\implies e=0,\\
+                \text{(2)}&\iff e-x=x\implies x=0.
+            \end{align*}
+            It is contradiction to ``$\forall x\in\Z$''.
+
+            So $\not\exists$ identity.
+
+            \medskip
+            \textbf{(b)}
+
+            \textbf{Associativity: Yes! both on $\Z$ and $\Q\setminus\{-1\}$.}
+            \begin{align*}
+                ((x,y),z)
+                    &= (x+y+xy,z)\\
+                    &= (x+y+xy)+z+(x+y+xy)z\\
+                    &= x+y+z+xy+yz+zx+xyz,\\[4pt]
+                (x,(y,z))
+                    &= (x,y+z+yz)\\
+                    &= x+(y+z+yz)+x(y+z+yz)\\
+                    &= x+y+z+xy+yz+zx+xyz.
+            \end{align*}
+            So $((x,y),z)=(x,(y,z))$.
+
+            \textbf{Commutative: Yes! both on $\Z$ and $\Q\setminus\{-1\}$.}
+            \[
+                (x,y)=x+y+xy
+            \]
+            \[
+                (y,x)=y+x+yx=x+y+yx
+            \]
+            \[
+                \Downarrow\quad x,y,z\in\Z\text{ or }\Q\setminus\{-1\}
+            \]
+            So $(x,y)=(y,x)$.
+
+            \textbf{Identity: the identity is $0$.}
+
+            Since, for every $x\in\Z$ or $\Q\setminus\{-1\}$,
+            \[
+                \left\{
+                \begin{aligned}
+                    (x,0)&=x+0+x\cdot0=x,\\
+                    (0,x)&=0+x+0\cdot x=x,
+                \end{aligned}
+                \right.
+            \]
+            \[
+                \Rightarrow\ (x,0)=x=(0,x)
+            \]
+            So $0$ is the identity.
+
+            \medskip
+            Only (b) on $\Q\setminus\{-1\}$ determine a group structure.
+
+            (a): can't because not associative.
+
+            (b): $(x,y)\mapsto x+y+xy$ is $G\times G\longrightarrow G$.
+
+            We only need inverse:
+            \begin{align*}
+                (x,x^{-1})=0
+                    &\Rightarrow x+x^{-1}+xx^{-1}=0\\
+                    &\Rightarrow x^{-1}=-\frac{x}{1+x}.
+            \end{align*}
+            Inverse exist only for $x\ne-1$.
+
+            Therefore can't on $\Z$, only can on $\Q\setminus\{-1\}$.
+        \end{sol}
+    \end{ej}
+
+    \begin{ej}
+        Prove that a group $G$ that has the property that $a^2=e$ for all
+        $a\in G$ is abelian.
+
+        \begin{sol}
+            proof:
+
+            Since $\forall a\in G:\quad a^2=a\cdot a=e$,
+            \[
+                \text{then }a^{-1}(a\cdot a)=a^{-1}\cdot e
+            \]
+            \[
+                \Rightarrow (a^{-1}\cdot a)a=a^{-1}
+            \]
+            \[
+                \Rightarrow a=a^{-1}
+            \]
+
+            take $x,y\in G$
+            \[
+                xy=x^{-1}y^{-1}=(yx)^{-1}=yx
+            \]
+            So $G$ is abelian.
+        \end{sol}
+    \end{ej}
+
+    \begin{ej}
+        Let $a$ and $b$ be elements of a group $G$. Prove that the order of
+        $ab$ is equal to the order of $ba$.
+
+        \begin{sol}
+            proof:
+
+            Suppose the order of $ab$ is $n$.
+
+            That is: $n$ is the minimal number s.t. $(ab)^n=e$.
+
+            Now to prove the order of $ba$ is also $n$:
+
+            \begin{itemize}
+                \item To show $(ba)^n=e$:
+                \begin{align*}
+                    (ba)^n
+                        &= (ba)(ba)\cdots(ba)\\
+                        &= b(ab)(ab)\cdots(ab)a\\
+                        &= b(ab)(ab)\cdots(ab)a(bb^{-1})\\
+                        &= b(ab)(ab)\cdots(ab)(ab)b^{-1}\\
+                        &= b(ab)^n b^{-1}\\
+                        &= b\cdot e\cdot b^{-1}\\
+                        &=e.
+                \end{align*}
+
+                \item To show $n$ is the smallest:
+
+                Suppose $\exists m<n$ / $(ba)^m=e$.
+                \begin{align*}
+                    (ba)^m
+                        &= (ba)(ba)\cdots(ba)\\
+                        &= b(ab)(ab)\cdots(ab)a\\
+                        &= b(ab)(ab)\cdots(ab)a(bb^{-1})\\
+                        &= b(ab)(ab)\cdots(ab)(ab)b^{-1}\\
+                        &= b(ab)^m b^{-1}.
+                \end{align*}
+                Then
+                \begin{align*}
+                    b(ab)^m b^{-1}&=e\\
+                    \Rightarrow b(ab)^m b^{-1}b&=e\cdot b\\
+                    \Rightarrow b(ab)^m&=b\\
+                    \Rightarrow b^{-1}b(ab)^m&=b^{-1}b\\
+                    \Rightarrow (ab)^m&=e.
+                \end{align*}
+                It is contradiction to order $(ab)=n$ $(m<n)$.
+            \end{itemize}
+
+            Therefore: order $(ba)=n$.
+        \end{sol}
+    \end{ej}
+
+    \begin{ej}
+        Let $G$ be a group. Prove that the following subsets of $G$ are
+        subgroups.
+        \begin{enumerate}
+            \item $H_1\cap H_2$ where $H_i\le G$.
+            \item The \emph{centraliser} of $a\in G$ defined by
+                $C_G(a)=\{x\in G\mid ax=xa\}$.
+            \item The \emph{centre} of $G$ defined by
+                $Z(G)=\{x\in G\mid xy=yx,\ \forall y\in G\}$.
+        \end{enumerate}
+
+        \begin{sol}
+            \textbf{(a)}
+
+            proof: we have the property that:
+
+            \textcolor{red}{Property: $H\le G$ iff}
+            \[
+                \textcolor{red}{\text{\textcircled{1}}\ e\in H,\qquad
+                \text{\textcircled{2}}\ \forall a,b\in H\Rightarrow ab\in H,
+                \qquad
+                \text{\textcircled{3}}\ \forall a\in H\Rightarrow a^{-1}\in H.}
+            \]
+            So we need to show \textcircled{1}\textcircled{2}\textcircled{3}
+            with $H_1\cap H_2$.
+
+            \textcircled{1}: since $H_1\le G,\ H_2\le G$,
+            \[
+                \text{then }e\in H_1,\ e\in H_2
+                \quad\Rightarrow\quad e\in H_1\cap H_2.
+            \]
+
+            \textcircled{2}: take $a,b\in H_1\cap H_2$.
+            \[
+                \left\{
+                \begin{aligned}
+                    a,b\in H_1&\xRightarrow{H_1\le G}ab\in H_1,\\
+                    a,b\in H_2&\xRightarrow{H_2\le G}ab\in H_2.
+                \end{aligned}
+                \right.
+            \]
+            Then $ab\in H_1\cap H_2$.
+
+            \textcircled{3}: take $x\in H_1\cap H_2$.
+
+            In particular $x\in H_1\ \wedge\ x\in H_2$.
+            \[
+                \Rightarrow x^{-1}\in H_1,\ x^{-1}\in H_2
+                \quad\Rightarrow\quad x^{-1}\in H_1\cap H_2.
+            \]
+            Therefore $H_1\cap H_2\le G$.
+
+            \medskip
+            \textbf{(b)}
+
+            proof: the same, we need to show \textcircled{1}\textcircled{2}
+            \textcircled{3} with $C_G(a)$.
+
+            \textcircled{1}: since $e\cdot a=a=a\cdot e$
+
+            then $e\in C_G(a)$.
+
+            \textcircled{2}: take $x,y\in C_G(a)$.
+            Then
+            \[
+                \left\{
+                \begin{aligned}
+                    xa&=ax\quad\text{(1)},\\
+                    ya&=ay\quad\text{(2)}.
+                \end{aligned}
+                \right.
+            \]
+            \begin{align*}
+                (xy)a&=x(ya)=x(ay)\\
+                    &=(xa)y\\
+                    &=(ax)y\\
+                    &=a(xy).
+            \end{align*}
+            So $(xy)\in C_G(a)$.
+
+            \textcircled{3}: take $x\in C_G(a)$.
+            \[
+                \text{then }xa=ax\quad\text{(1)}
+            \]
+            \[
+                \text{(1)}\Rightarrow a=x^{-1}ax
+            \]
+            \begin{align*}
+                \text{then }ax^{-1}
+                    &=(x^{-1}ax)x^{-1}\\
+                    &=(x^{-1}a)(xx^{-1})\\
+                    &=x^{-1}a.
+            \end{align*}
+            So $x^{-1}\in C_G(a)$.
+
+            Therefore $C_G(a)\le G$.
+
+            \medskip
+            \textbf{(c)}
+
+            \textcircled{1}: Since $e\cdot y=y=y\cdot e\quad\forall y\in G$
+
+            then $e\in Z(G)$.
+
+            \textcircled{2}: take $a,b\in Z(G)$.
+
+            Then
+            \[
+                \left\{
+                \begin{aligned}
+                    ax&=xa\quad\forall x\in G\quad\text{(1)},\\
+                    by&=yb\quad\forall y\in G\quad\text{(2)}.
+                \end{aligned}
+                \right.
+            \]
+            \begin{align*}
+                (ab)z&=a(bz)=a(zb)=(az)b\\
+                    &\overset{\text{(1)}}{=}(za)b\\
+                    &=z(ab).
+            \end{align*}
+            Then $ab\in Z(G)$.
+
+            \textcircled{3}: take $a\in Z(G)$.
+
+            Then $ax=xa\quad\forall x\in G$.
+            \begin{align*}
+                a^{-1}x
+                    &=a^{-1}(axa^{-1})\\
+                    &=(a^{-1}a)(xa^{-1})\\
+                    &=xa^{-1}\quad\forall x\in G.
+            \end{align*}
+            So $a^{-1}\in Z(G)$.
+
+            Therefore $Z(G)\le G$.
+        \end{sol}
+    \end{ej}
+
+    \begin{ej}
+        Prove that the inverse of a permutation matrix is its transpose.
+
+        \begin{sol}
+            \textcolor{orange}{Def: permutation matrix is a $n\times n$ matrix
+            that every row, column has only one ``1''.}
+
+            proof: Suppose we have a permutation matrix $P$.
+
+            To show $P^{-1}=P^T$ we just need to show that
+            $PP^T=I=P^TP$.
+
+            \textcircled{1}\quad $PP^T=I$:
+
+            Suppose $P\in M_{n\times n}$,
+            \[
+                P=(P_{ij})=
+                \begin{bmatrix}
+                    P_{11}&P_{12}&\cdots&P_{1n}\\
+                    P_{21}&P_{22}&\cdots&P_{2n}\\
+                    \vdots&\vdots&\ddots&\vdots\\
+                    P_{n1}&P_{n2}&\cdots&P_{nn}
+                \end{bmatrix},
+                \qquad
+                P^T=
+                \begin{bmatrix}
+                    P_{11}&P_{21}&\cdots&P_{n1}\\
+                    P_{12}&P_{22}&\cdots&P_{n2}\\
+                    \vdots&\vdots&\ddots&\vdots\\
+                    P_{1n}&P_{2n}&\cdots&P_{nn}
+                \end{bmatrix}.
+            \]
+            Then
+            \[
+                (PP^T)_{ij}=P_{i1}P_{j1}+P_{i2}P_{j2}+\cdots+P_{in}P_{jn}.
+            \]
+
+            If $i\ne j$:
+            \[
+                (PP^T)_{ij}
+                =P_{i1}P_{j1}+P_{i2}P_{j2}+\cdots+P_{in}P_{jn}=0.
+            \]
+
+            If $i=j$:
+            \begin{align*}
+                (PP^T)_{ij}
+                    &=P_{i1}P_{i1}+P_{i2}P_{i2}+\cdots+P_{in}P_{in}\\
+                    &=P_{i1}^2+P_{i2}^2+\cdots+P_{in}^2
+                    \quad\textcolor{green}{(One of them = 1, other = 0)}\\
+                    &=1.
+            \end{align*}
+            So $PP^T=I$.
+
+            Similarly: $P^TP=I$.
+
+            Therefore: $P^{-1}=P^T$.
+        \end{sol}
+    \end{ej}
+
+\end{document}

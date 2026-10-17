@@ -1,0 +1,107 @@
+\documentclass[11pt]{article}
+
+\usepackage{graphicx}
+\usepackage{amsfonts}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage[latin1]{inputenc}
+\usepackage{fancyhdr}
+\usepackage{layout}
+\usepackage{multicol}
+\usepackage{enumitem} 
+\setcounter{MaxMatrixCols}{10}
+
+\setlength{\voffset}{-1in}
+\setlength{\topmargin}{1cm}
+\setlength{\headheight}{1cm}
+\setlength{\headsep}{1cm}
+\setlength{\textheight}{24cm}
+\setlength{\footskip}{1.2cm}
+\setlength{\evensidemargin}{0in}
+\setlength{\oddsidemargin}{0cm}
+\setlength{\textwidth}{17cm}
+\setlength{\marginparsep}{0cm}
+\setlength{\marginparwidth}{0cm}
+\pagestyle{fancy}
+\rhead{}
+\rhead{Introduction to Group Theory - 1040158\\ Guangdong Technion}
+\lhead{{\large\scshape Homework Assignment x  \\ Winter - 2026}}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\newcounter{ej}
+\renewcommand{\theej}{\textbf{\arabic{ej}.}}
+\newenvironment{ej}{
+	\stepcounter{ej}
+	\begin{list}{\theej}{
+			\setlength{\itemindent}{0ex}
+			\setlength{\labelwidth}{4ex}
+			\setlength{\labelsep}{0.5ex}
+			\setlength{\leftmargin}{4ex}
+			\setlength{\listparindent}{0ex}
+			\setlength{\topsep}{3mm plus 0.5mm minus 0.5mm}
+			\setlength{\parsep}{0mm}
+			\setlength{\itemsep}{1mm plus 0.3mm minus 0.3mm}
+			\setlength{\rightmargin}{0ex}
+		}
+		\item }
+	{\end{list}}
+\renewcommand{\labelenumi}{$($\alph{enumi}$)$ }
+
+\usepackage{xcolor}                    
+\usepackage{calc} 
+
+\newenvironment{sol}{
+  \par\medskip                           
+  \noindent
+  \fcolorbox{black}{gray!20}{
+    \begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}
+    \textbf{Answer:} \ignorespaces
+    }{
+        \end{minipage}
+    }
+    \par\medskip                            
+}
+
+\newcommand{\Hh}{\mathbb{H}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\K}{\mathbb{K}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+
+\newcommand{\Bb}{\mathcal{B}}
+\newcommand{\Ee}{\mathcal{E}}
+\newcommand{\Ff}{\mathcal{F}}
+\newcommand{\Kk}{\mathcal{K}}
+\newcommand{\Rr}{\mathcal{R}}
+\newcommand{\Ss}{\mathcal{S}}
+
+
+\newcommand{\op}{\operatorname}
+\newcommand{\spn}{\op{span}}
+\newcommand{\tr}{\op{tr}}
+\newcommand{\Imm}{\text{Im }}
+
+
+\begin{document}
+    \thispagestyle{fancy}
+
+    \begin{center}
+        \large Autor: xxx xxxxxx \\
+        ID: xxxxxx
+    \end{center}
+
+    \begin{ej}
+        Problem statement and solution of the exercise. $\F$, $\K$, $\Hh$, $\N$, $\Z$, $\Q$, $\R$, $\C$, $\Bb$, $\Ee$, $\Rr$, $\Ss$, $\Kk$, $\Ff$, $\spn \{\cdots\}$, $\tr A$, $\Imm$, $\ker$, $\det$.
+    \end{ej}
+
+    \begin{ej}
+        Problem statement and solution of the exercise.
+    \end{ej}
+
+
+
+    
+\end{document}
