@@ -7,6 +7,7 @@ import threading
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from unittest.mock import patch
 
 SCRIPT = Path(__file__).with_name("handwriting_to_latex.py")
 SPEC = importlib.util.spec_from_file_location("handwriting_to_latex", SCRIPT)
@@ -16,6 +17,32 @@ SPEC.loader.exec_module(converter)
 
 
 class KimiApiTests(unittest.TestCase):
+    def test_resolve_pdf_input_accepts_folder_with_one_pdf(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            pdf_path = folder / "笔记原始文件名.PDF"
+            pdf_path.write_bytes(b"pdf")
+            (folder / "ignore.txt").write_text("not a PDF", encoding="utf-8")
+
+            self.assertEqual(converter.resolve_pdf_input(folder), pdf_path)
+
+    def test_resolve_pdf_input_rejects_folder_with_multiple_pdfs(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            (folder / "first.pdf").write_bytes(b"pdf")
+            (folder / "second.pdf").write_bytes(b"pdf")
+
+            with self.assertRaisesRegex(ValueError, "More than one PDF"):
+                converter.resolve_pdf_input(folder)
+
+    def test_diagram_rendering_is_enabled_by_default_and_can_be_disabled(self) -> None:
+        with patch("sys.argv", ["handwriting_to_latex.py", "input.pdf"]):
+            self.assertTrue(converter.parse_args().draw_diagrams)
+        with patch(
+            "sys.argv", ["handwriting_to_latex.py", "input.pdf", "--no-draw-diagrams"]
+        ):
+            self.assertFalse(converter.parse_args().draw_diagrams)
+
     def test_default_template_uses_current_repository_location(self) -> None:
         template = converter.default_template_path()
         self.assertEqual(template.name, "TemplateHW.tex")
@@ -109,6 +136,35 @@ class KimiApiTests(unittest.TestCase):
                 )
         self.assertIn("HTTP 400", str(caught.exception))
         self.assertNotIn(api_key, str(caught.exception))
+
+    def test_render_diagrams_replaces_marker_and_writes_pdf(self) -> None:
+        try:
+            import matplotlib  # noqa: F401
+        except ImportError:
+            self.skipTest("Matplotlib is not installed")
+
+        body = r"""Before \PYFIGURE{figure1} after
+%% PYFIGURES_BEGIN
+{"figures":[{"id":"figure1","xlim":[-2,2],"ylim":[-2,2],"elements":[{"type":"point","at":[0,0],"label":"e"},{"type":"arrow","from":[0,0],"to":[1,1],"label":"a"},{"type":"circle","center":[0,0],"radius":1}]}]}
+%% PYFIGURES_END"""
+        with tempfile.TemporaryDirectory() as directory:
+            converted, files = converter.render_diagrams(body, Path(directory))
+            self.assertIn(r"\includegraphics[width=0.8\linewidth]{figures/figure1.pdf}", converted)
+            self.assertNotIn("PYFIGURES_", converted)
+            self.assertEqual(files, ["figures/figure1.pdf"])
+            self.assertTrue((Path(directory) / files[0]).is_file())
+
+    def test_render_diagrams_rejects_unmatched_placeholders(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "without a PYFIGURES data block"):
+            converter.render_diagrams(r"\PYFIGURE{figure1}", Path("unused"))
+
+    def test_render_diagrams_rejects_non_finite_coordinates(self) -> None:
+        body = r"""\PYFIGURE{figure1}
+%% PYFIGURES_BEGIN
+{"figures":[{"id":"figure1","xlim":[-2,2],"ylim":[-2,2],"elements":[{"type":"point","at":[NaN,0]}]}]}
+%% PYFIGURES_END"""
+        with self.assertRaisesRegex(RuntimeError, "not valid JSON"):
+            converter.render_diagrams(body, Path("unused"))
 
 
 if __name__ == "__main__":
