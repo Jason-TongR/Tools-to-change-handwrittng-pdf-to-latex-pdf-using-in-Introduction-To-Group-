@@ -106,7 +106,7 @@ if ($env:MOONSHOT_API_KEY) { "API key is set" } else { "API key is missing" }
 把下面命令里的姓名、学号和作业编号替换成自己的信息。命令必须在仓库根目录运行。输入路径直接指向笔记文件夹，不用填写 PDF 文件名，也不用重命名：
 
 ```powershell
-py "手写pdf转换latex脚本工具/handwriting_to_latex.py" "你的手写笔记请放在这个文件夹" --api-url "https://api.moonshot.cn/v1/chat/completions" --model "kimi-k3" --api-key-env MOONSHOT_API_KEY --author "StudentName" --student-id "000000" --assignment 1 --compile
+python "手写pdf转换latex脚本工具/handwriting_to_latex.py" "你的手写笔记请放在这个文件夹" --api-url "https://api.moonshot.cn/v1/chat/completions" --model "kimi-k3" --api-key-env MOONSHOT_API_KEY --author "StudentName" --student-id "000000" --assignment 1 --compile
 ```
 
 图形识别默认开启，不需要额外写开关。若要关闭，可在命令末尾加 `--no-draw-diagrams`。`--compile` 会生成 PDF 预览；若暂时不想编译，删掉这个参数即可。
