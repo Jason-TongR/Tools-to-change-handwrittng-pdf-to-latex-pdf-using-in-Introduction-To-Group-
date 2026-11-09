@@ -455,7 +455,7 @@ def build_template_document(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Transcribe handwritten PDF pages with a user-selected vision model into the group-theory homework template."
+        description="Convert a handwritten PDF into a finished mathematical LaTeX PDF."
     )
     parser.add_argument(
         "pdf",
@@ -477,7 +477,6 @@ def parse_args() -> argparse.Namespace:
         help="Teacher's TemplateHW.tex (defaults to Uri Onn作业模板/TemplateHW.tex)",
     )
     parser.add_argument("-o", "--output-dir", type=Path, help="Output folder (default: <PDF name>_latex)")
-    parser.add_argument("--mode", choices=("both", "visual", "faithful"), default="both")
     parser.add_argument("--author", help="Replace the template author placeholder")
     parser.add_argument("--student-id", help="Replace the template ID placeholder")
     parser.add_argument("--assignment", help="Replace the assignment number in the header")
@@ -498,7 +497,6 @@ def parse_args() -> argparse.Namespace:
         help="Kimi K3 reasoning effort (used only by kimi-k3; default: low)",
     )
     parser.add_argument("--prompt-file", type=Path, help="Optional UTF-8 file with custom transcription instructions")
-    parser.add_argument("--compile", action="store_true", help="Compile generated .tex files using pdflatex")
     parser.add_argument(
         "--draw-diagrams",
         action=argparse.BooleanOptionalAction,
@@ -523,116 +521,105 @@ def main() -> int:
         return 2
 
     api_key: str | None = None
-    if args.mode in ("both", "visual"):
-        if not args.api_url or not args.model:
-            print("Error: --api-url and --model are required for visual transcription", file=sys.stderr)
-            return 2
-        api_key = os.environ.get(args.api_key_env)
-        if not api_key:
-            print(f"Error: set the API key in environment variable {args.api_key_env}", file=sys.stderr)
-            return 2
+    if not args.api_url or not args.model:
+        print("Error: --api-url and --model are required for visual transcription", file=sys.stderr)
+        return 2
+    api_key = os.environ.get(args.api_key_env)
+    if not api_key:
+        print(f"Error: set the API key in environment variable {args.api_key_env}", file=sys.stderr)
+        return 2
 
     output_dir = (args.output_dir or pdf_path.with_name(f"{pdf_path.stem}_latex")).expanduser().resolve()
     template_path = args.template.expanduser().resolve() if args.template else None
-    if args.mode in ("both", "visual"):
-        try:
-            template_path = template_path or default_template_path()
-        except RuntimeError as error:
-            print(f"Error: {error}", file=sys.stderr)
-            return 1
-        if not template_path.is_file():
-            print(f"Error: template file does not exist: {template_path}", file=sys.stderr)
-            return 2
+    try:
+        template_path = template_path or default_template_path()
+    except RuntimeError as error:
+        print(f"Error: {error}", file=sys.stderr)
+        return 1
+    if not template_path.is_file():
+        print(f"Error: template file does not exist: {template_path}", file=sys.stderr)
+        return 2
 
     output_dir.mkdir(parents=True, exist_ok=True)
     source_copy = output_dir / "source.pdf"
     shutil.copy2(pdf_path, source_copy)
-    manifest: dict[str, Any] = {
-        "source_pdf": source_copy.name,
-        "mode": args.mode,
-        "model": args.model if args.mode in ("both", "visual") else None,
-        "api_key_value_saved": False,
-        "page_count": None,
-        "generated_files": [],
-    }
 
     try:
-        if args.mode in ("both", "faithful"):
-            faithful_tex = output_dir / "faithful.tex"
-            faithful_tex.write_text(
-                "\\documentclass{article}\n"
-                "\\usepackage[final]{pdfpages}\n"
-                "\\begin{document}\n"
-                "\\includepdf[pages=-,fitpaper=true]{source.pdf}\n"
-                "\\end{document}\n",
-                encoding="utf-8",
-            )
-            manifest["generated_files"].append(faithful_tex.name)
+        pdfinfo = find_tool("pdfinfo")
+        metadata = run([pdfinfo, str(source_copy)]).stdout
+        page_match = re.search(r"^Pages:\s+(\d+)\s*$", metadata, re.MULTILINE)
+        if page_match is None:
+            raise RuntimeError("Could not determine the source PDF page count")
+        page_count = int(page_match.group(1))
 
-        if args.mode in ("both", "visual"):
-            pdfinfo = find_tool("pdfinfo")
-            metadata = run([pdfinfo, str(source_copy)]).stdout
-            page_match = re.search(r"^Pages:\s+(\d+)\s*$", metadata, re.MULTILINE)
-            if page_match is None:
-                raise RuntimeError("Could not determine the source PDF page count")
-            page_count = int(page_match.group(1))
-            manifest["page_count"] = page_count
+        page_dir = output_dir / "pages"
+        page_dir.mkdir(exist_ok=True)
+        for stale_image in page_dir.glob("page-*.jpg"):
+            stale_image.unlink()
+        pages = render_pages(source_copy, page_dir, args.dpi, find_tool("pdftoppm"))
+        if len(pages) != page_count:
+            raise RuntimeError(f"Expected {page_count} page images, rendered {len(pages)}")
 
-            page_dir = output_dir / "pages"
-            page_dir.mkdir(exist_ok=True)
-            for stale_image in page_dir.glob("page-*.jpg"):
-                stale_image.unlink()
-            pages = render_pages(source_copy, page_dir, args.dpi, find_tool("pdftoppm"))
-            if len(pages) != page_count:
-                raise RuntimeError(f"Expected {page_count} page images, rendered {len(pages)}")
-
-            prompt = args.prompt_file.read_text(encoding="utf-8") if args.prompt_file else DEFAULT_PROMPT
-            if args.draw_diagrams:
-                prompt += "\n" + DIAGRAM_PROMPT
-            body = transcribe_images(
-                pages,
-                api_url=args.api_url,
-                model=args.model,
-                api_key=api_key,
-                timeout=args.timeout,
-                max_tokens=args.max_tokens,
-                reasoning_effort=args.reasoning_effort,
-                prompt=prompt,
-            )
-            diagram_files: list[str] = []
-            if args.draw_diagrams:
-                body, diagram_files = render_diagrams(body, output_dir)
-            tex_path = output_dir / "transcription.tex"
-            build_template_document(
-                template_path,
-                tex_path,
-                body,
-                author=args.author,
-                student_id=args.student_id,
-                assignment=args.assignment,
-            )
-            manifest["generated_files"].append(tex_path.name)
-            manifest["generated_files"].extend(diagram_files)
-            (output_dir / "transcription_body.tex").write_text(body + "\n", encoding="utf-8")
-            manifest["generated_files"].append("transcription_body.tex")
-
-        if args.compile:
-            pdflatex = find_tool("pdflatex")
-            for tex_name in manifest["generated_files"]:
-                if tex_name.endswith(".tex") and tex_name != "transcription_body.tex":
-                    run([pdflatex, "-interaction=nonstopmode", "-halt-on-error", tex_name], cwd=output_dir)
-                    manifest["generated_files"].append(Path(tex_name).with_suffix(".pdf").name)
-
-        (output_dir / "manifest.json").write_text(
-            json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        prompt = args.prompt_file.read_text(encoding="utf-8") if args.prompt_file else DEFAULT_PROMPT
+        if args.draw_diagrams:
+            prompt += "\n" + DIAGRAM_PROMPT
+        body = transcribe_images(
+            pages,
+            api_url=args.api_url,
+            model=args.model,
+            api_key=api_key,
+            timeout=args.timeout,
+            max_tokens=args.max_tokens,
+            reasoning_effort=args.reasoning_effort,
+            prompt=prompt,
         )
+        if args.draw_diagrams:
+            body, _ = render_diagrams(body, output_dir)
+        tex_path = output_dir / "transcription.tex"
+        build_template_document(
+            template_path,
+            tex_path,
+            body,
+            author=args.author,
+            student_id=args.student_id,
+            assignment=args.assignment,
+        )
+
+        pdflatex = find_tool("pdflatex")
+        run(
+            [pdflatex, "-interaction=nonstopmode", "-halt-on-error", tex_path.name],
+            cwd=output_dir,
+        )
+        output_pdf = output_dir / "transcription.pdf"
+        cleanup_paths = [
+            source_copy,
+            tex_path,
+            output_dir / "transcription_body.tex",
+            output_dir / "faithful.tex",
+            output_dir / "faithful.pdf",
+            output_dir / "manifest.json",
+            output_dir / "transcription.aux",
+            output_dir / "transcription.log",
+            output_dir / "transcription.out",
+            output_dir / "transcription.fls",
+            output_dir / "transcription.fdb_latexmk",
+            output_dir / "transcription.synctex.gz",
+            output_dir / "pages",
+            output_dir / "figures",
+        ]
+        for path in cleanup_paths:
+            if path.is_dir():
+                shutil.rmtree(path)
+            elif path.is_file():
+                path.unlink()
+        if not output_pdf.is_file():
+            raise RuntimeError("pdflatex completed without creating transcription.pdf")
     except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
         print(f"Error: {error}", file=sys.stderr)
         return 1
 
     print(f"Created output in: {output_dir}")
-    for file_name in manifest["generated_files"]:
-        print(f"  {file_name}")
+    print(f"  {output_pdf.name}")
     return 0
 
 

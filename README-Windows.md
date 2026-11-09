@@ -106,21 +106,18 @@ if ($env:MOONSHOT_API_KEY) { "API key is set" } else { "API key is missing" }
 把下面命令里的姓名、学号和作业编号替换成自己的信息。命令必须在仓库根目录运行。输入路径直接指向笔记文件夹，不用填写 PDF 文件名，也不用重命名：
 
 ```powershell
-python3 "手写pdf转换latex脚本工具/handwriting_to_latex.py" "你的手写笔记请放在这个文件夹" --api-url "https://api.moonshot.cn/v1/chat/completions" --model "kimi-k3.1-pro" --api-key-env MOONSHOT_API_KEY --author "StudentName" --student-id "000000" --assignment 1 --compile
+python3 "手写pdf转换latex脚本工具/handwriting_to_latex.py" "你的手写笔记请放在这个文件夹" --api-url "https://api.moonshot.cn/v1/chat/completions" --model "kimi-k3.1-pro" --api-key-env MOONSHOT_API_KEY --author "StudentName" --student-id "000000" --assignment 1
 ```
 
-默认使用 Kimi K3.1 Pro 标准模型，并要求模型只根据手写 PDF 内容进行专业数学排版；排版可以改善公式、段落和结构的呈现，但不会改写、补充或纠正原内容。图形识别默认开启，不需要额外写开关。若要关闭，可在命令末尾加 `--no-draw-diagrams`。`--compile` 会生成 PDF 预览；若暂时不想编译，删掉这个参数即可。若平台实际显示的模型 ID 不同，可显式添加 `--model` 覆盖默认值。
+默认使用 Kimi K3.1 Pro 标准模型，并要求模型只根据手写 PDF 内容进行专业数学排版；排版可以改善公式、段落和结构的呈现，但不会改写、补充或纠正原内容。程序会自动编译，完成后输出目录中只保留最终的 `transcription.pdf`。图形识别默认开启，不需要额外写开关；若要关闭，可在命令末尾加 `--no-draw-diagrams`。若平台实际显示的模型 ID 不同，可显式添加 `--model` 覆盖默认值。
 
 姓名请使用英文字母或拼音，避免当前模板的 `pdflatex` 因中文姓名报 Unicode 错误。命令运行期间请不要关闭终端；完成时会显示输出目录。
 
 ## 8. 找到结果并校对
 
-输出默认在输入 PDF 旁边、以原 PDF 文件名命名的 `_latex` 文件夹中。例如原文件叫 `GroupTheoryNotes.pdf`，输出目录就是 `GroupTheoryNotes_latex`。重点检查：
+输出默认在输入 PDF 旁边、以原 PDF 文件名命名的 `_latex` 文件夹中。例如原文件叫 `GroupTheoryNotes.pdf`，输出目录就是 `GroupTheoryNotes_latex`。最终文件是：
 
-- `transcription.tex`：可编辑 LaTeX 草稿。
-- `transcription.pdf`：编译后的预览（使用了 `--compile` 才会生成）。
-- `transcription_body.tex`：模型识别出的正文。
-- `figures`：识别并绘制出的图形 PDF。
+- `transcription.pdf`：转换并编译完成的 PDF。
 
 打开 `transcription.pdf` 和原手写 PDF 对照检查。模型可能误认公式、点线关系或标签，确认无误后再提交。
 
@@ -130,5 +127,5 @@ python3 "手写pdf转换latex脚本工具/handwriting_to_latex.py" "你的手写
 - **`pdflatex` 找不到**：重开 VS Code；检查 MiKTeX 是否安装完成并在 MiKTeX Console 更新。
 - **提示缺少 Matplotlib**：先激活 `.venv`，再运行 `python -m pip install matplotlib`。
 - **API 返回 HTTP 401/400**：检查 Key、模型名、接口地址、图片输入权限和账户额度；不要把 Key 发给别人。
-- **LaTeX 编译报错**：打开 `transcription.tex`，从编译日志第一条 `!` 错误开始检查；通常需要修正模型生成的 LaTeX。
+- **LaTeX 编译报错**：程序会直接报告编译错误。由于中间 LaTeX 文件会在成功后自动清理，如需调试，可先在代码中暂时关闭清理步骤。
 - **输入 PDF 含有很多页或请求超时**：可在转换命令中加 `--dpi 100` 降低发给模型的图片分辨率，或将 PDF 拆成较短的部分。
