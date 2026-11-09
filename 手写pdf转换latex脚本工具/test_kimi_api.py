@@ -17,6 +17,10 @@ SPEC.loader.exec_module(converter)
 
 
 class KimiApiTests(unittest.TestCase):
+    def test_default_model_is_kimi_k31_pro(self) -> None:
+        with patch("sys.argv", ["handwriting_to_latex.py", "input.pdf"]):
+            self.assertEqual(converter.parse_args().model, "kimi-k3.1-pro")
+
     def test_resolve_pdf_input_accepts_folder_with_one_pdf(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             folder = Path(directory)
@@ -102,6 +106,44 @@ class KimiApiTests(unittest.TestCase):
         self.assertEqual(set(image_part["image_url"]), {"url"})
         self.assertTrue(image_part["image_url"]["url"].startswith("data:image/jpeg;base64,"))
         self.assertEqual(result, r"\\begin{ej}x\\end{ej}")
+
+    def test_kimi_k31_pro_uses_completion_token_field_without_k3_reasoning_field(self) -> None:
+        captured: dict[str, object] = {}
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_POST(self) -> None:
+                captured["payload"] = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+                data = json.dumps(
+                    {"choices": [{"message": {"content": r"\\begin{ej}x\\end{ej}"}}]}
+                ).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+
+            def log_message(self, format: str, *args: object) -> None:
+                return
+
+        server = self.start_server(Handler)
+        with tempfile.TemporaryDirectory() as directory:
+            image = Path(directory) / "page.jpg"
+            image.write_bytes(b"fake-jpeg")
+            converter.transcribe_images(
+                [image],
+                api_url=f"http://127.0.0.1:{server.server_port}/v1/chat/completions",
+                model="kimi-k3.1-pro",
+                api_key="mock-secret",
+                timeout=5,
+                max_tokens=1234,
+            )
+
+        payload = captured["payload"]
+        self.assertEqual(payload["model"], "kimi-k3.1-pro")
+        self.assertEqual(payload["max_completion_tokens"], 1234)
+        self.assertNotIn("reasoning_effort", payload)
+        self.assertNotIn("temperature", payload)
+        self.assertNotIn("max_tokens", payload)
 
     def test_http_error_detail_is_reported_without_api_key(self) -> None:
         api_key = "secret-value-do-not-print"

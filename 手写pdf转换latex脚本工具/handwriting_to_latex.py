@@ -20,9 +20,13 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_PROMPT = """Transcribe the handwritten homework in the attached page images into LaTeX.
+DEFAULT_MODEL = "kimi-k3.1-pro"
+
+DEFAULT_PROMPT = """Transcribe the handwritten mathematical work in the attached page images into a professionally typeset mathematical LaTeX document.
 Return ONLY the content that belongs between \\begin{document} and \\end{document}; do not return a preamble, markdown fences, or explanations.
-Use the provided group-theory homework template conventions: each exercise uses \\begin{ej}...\\end{ej}, and handwritten solutions use \\begin{sol}...\\end{sol}. Preserve the order, wording, notation, proof steps, crossed-out or annotated meaning where legible, and visible colored notes. Do not correct mathematics, silently complete missing arguments, or invent unreadable text. Represent genuinely unclear handwriting as \\textcolor{red}{[unclear: short visual description]}. Keep all LaTeX syntactically balanced. Use only standard LaTeX and the macros defined by the template. For colors use xcolor names such as red, green, orange, or blue. The source images are in page order."""
+Use the provided group-theory homework template conventions: each exercise uses \\begin{ej}...\\end{ej}, and handwritten solutions use \\begin{sol}...\\end{sol}. Use clean mathematical typesetting: display equations for displayed formulas, aligned environments for multi-line derivations, consistent spacing, and clear paragraph breaks. You may use section-like headings, theorem/proof formatting, and standard LaTeX mathematical environments only when they correspond to visible structure in the source.
+
+The handwritten PDF is the sole source of truth. Preserve exactly the visible wording, mathematical meaning, notation, proof steps, order, crossed-out or annotated meaning where legible, and visible colored notes. Formatting may improve presentation, but content must not be rewritten, summarized, corrected, completed, modernized, or silently reordered. Do not add definitions, claims, explanations, proof steps, conclusions, or citations that are not visible. Do not infer missing mathematics. Represent genuinely unclear handwriting as \\textcolor{red}{[unclear: short visual description]}. Keep all LaTeX syntactically balanced. Use only standard LaTeX and the macros defined by the template. For colors use xcolor names such as red, green, orange, or blue. The source images are in page order."""
 
 DIAGRAM_PROMPT = r"""
 For each hand-drawn mathematical diagram, place the command \PYFIGURE{figure1} (use unique IDs figure1, figure2, ...) at its original position in the LaTeX body. Do not redraw diagrams using TikZ. At the very end of the body, append exactly one data block in this format:
@@ -187,7 +191,7 @@ def transcribe_images(
         ],
     }
     hostname = (urlparse(api_url).hostname or "").lower()
-    use_kimi_format = model.lower() == "kimi-k3" or hostname.endswith(
+    use_kimi_format = model.lower().startswith("kimi-k3") or hostname.endswith(
         ("moonshot.cn", "kimi.com")
     )
     if use_kimi_format:
@@ -459,7 +463,9 @@ def parse_args() -> argparse.Namespace:
         help="Input handwritten PDF, or a folder containing exactly one PDF",
     )
     parser.add_argument("--api-url", help="Full OpenAI-compatible Chat Completions endpoint URL")
-    parser.add_argument("--model", help="Vision model identifier accepted by your API")
+    parser.add_argument(    "--model",
+    default=DEFAULT_MODEL,
+    help=f"Vision model identifier accepted by your API (default: {DEFAULT_MODEL})",)
     parser.add_argument(
         "--api-key-env",
         default="VISION_API_KEY",
@@ -489,7 +495,7 @@ def parse_args() -> argparse.Namespace:
         "--reasoning-effort",
         choices=("low", "high", "max"),
         default="low",
-        help="Kimi K3 reasoning effort (default: low)",
+        help="Kimi K3 reasoning effort (used only by kimi-k3; default: low)",
     )
     parser.add_argument("--prompt-file", type=Path, help="Optional UTF-8 file with custom transcription instructions")
     parser.add_argument("--compile", action="store_true", help="Compile generated .tex files using pdflatex")

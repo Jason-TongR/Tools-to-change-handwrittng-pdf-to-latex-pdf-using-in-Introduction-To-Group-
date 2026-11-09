@@ -106,10 +106,10 @@ if ($env:MOONSHOT_API_KEY) { "API key is set" } else { "API key is missing" }
 把下面命令里的姓名、学号和作业编号替换成自己的信息。命令必须在仓库根目录运行。输入路径直接指向笔记文件夹，不用填写 PDF 文件名，也不用重命名：
 
 ```powershell
-python3 "手写pdf转换latex脚本工具/handwriting_to_latex.py" "你的手写笔记请放在这个文件夹" --api-url "https://api.moonshot.cn/v1/chat/completions" --model "kimi-k3" --api-key-env MOONSHOT_API_KEY --author "StudentName" --student-id "000000" --assignment 1 --compile
+python3 "手写pdf转换latex脚本工具/handwriting_to_latex.py" "你的手写笔记请放在这个文件夹" --api-url "https://api.moonshot.cn/v1/chat/completions" --model "kimi-k3.1-pro" --api-key-env MOONSHOT_API_KEY --author "StudentName" --student-id "000000" --assignment 1 --compile
 ```
 
-图形识别默认开启，不需要额外写开关。若要关闭，可在命令末尾加 `--no-draw-diagrams`。`--compile` 会生成 PDF 预览；若暂时不想编译，删掉这个参数即可。
+默认使用 Kimi K3.1 Pro 标准模型，并要求模型只根据手写 PDF 内容进行专业数学排版；排版可以改善公式、段落和结构的呈现，但不会改写、补充或纠正原内容。图形识别默认开启，不需要额外写开关。若要关闭，可在命令末尾加 `--no-draw-diagrams`。`--compile` 会生成 PDF 预览；若暂时不想编译，删掉这个参数即可。若平台实际显示的模型 ID 不同，可显式添加 `--model` 覆盖默认值。
 
 姓名请使用英文字母或拼音，避免当前模板的 `pdflatex` 因中文姓名报 Unicode 错误。命令运行期间请不要关闭终端；完成时会显示输出目录。
 
