@@ -123,7 +123,9 @@ def render_pages(pdf_path: Path, image_dir: Path, dpi: int, pdftoppm: str) -> li
 
 def response_text(payload: dict[str, Any]) -> str:
     try:
-        content = payload["choices"][0]["message"]["content"]
+        choice = payload["choices"][0]
+        message = choice["message"]
+        content = message["content"]
     except (KeyError, IndexError, TypeError) as error:
         raise RuntimeError("Vision API response did not contain choices[0].message.content") from error
 
@@ -150,7 +152,14 @@ def response_text(payload: dict[str, Any]) -> str:
         text = document_body.group(1).strip()
 
     if not text:
-        raise RuntimeError("Vision API returned an empty transcription")
+        finish_reason = choice.get("finish_reason", "unknown")
+        message_fields = ", ".join(sorted(str(key) for key in message))
+        raise RuntimeError(
+            "Vision API returned an empty transcription "
+            f"(finish_reason={finish_reason}; message fields: {message_fields or 'none'}). "
+            "The completion may have used its token budget for reasoning; "
+            "try a larger --max-completion-tokens value."
+        )
     if r"\begin{document}" in text or r"\end{document}" in text:
         raise RuntimeError("Could not isolate the transcription body from the API response")
     return text
@@ -162,7 +171,7 @@ def transcribe_images(
     api_url: str,
     model: str,
     api_key: str,
-    timeout: int,
+    timeout: int | None,
     max_tokens: int,
     reasoning_effort: str = "low",
     prompt: str = DEFAULT_PROMPT,
@@ -232,6 +241,12 @@ def transcribe_images(
         if detail:
             message += f": {detail}"
         raise RuntimeError(message) from error
+    except TimeoutError as error:
+        raise RuntimeError(
+            f"Vision API request timed out after {timeout} seconds. "
+            "The API may have processed the request already; do not retry blindly, "
+            "and check the provider's request or billing history first."
+        ) from error
     except urllib.error.URLError as error:
         raise RuntimeError(f"Could not connect to the vision API: {error.reason}") from error
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
@@ -501,14 +516,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--student-id", help="Replace the template ID placeholder")
     parser.add_argument("--assignment", help="Replace the assignment number in the header")
     parser.add_argument("--dpi", type=int, default=160, help="Page image resolution, 72-300 DPI (default: 160)")
-    parser.add_argument("--timeout", type=int, default=240, help="API request timeout in seconds (default: 240)")
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=None,
+        help="API request timeout in seconds (default: no limit)",
+    )
     parser.add_argument(
         "--max-completion-tokens",
         "--max-tokens",
         dest="max_tokens",
         type=int,
-        default=16000,
-        help="Maximum completion tokens (default: 16000; --max-tokens remains an alias)",
+        default=131072,
+        help="Maximum completion tokens (default: 131072; --max-tokens remains an alias)",
     )
     parser.add_argument(
         "--reasoning-effort",
@@ -536,8 +556,8 @@ def main() -> int:
     if not 72 <= args.dpi <= 300:
         print("Error: --dpi must be between 72 and 300", file=sys.stderr)
         return 2
-    if args.timeout < 1 or args.max_tokens < 1:
-        print("Error: --timeout and --max-tokens must be positive", file=sys.stderr)
+    if (args.timeout is not None and args.timeout < 1) or args.max_tokens < 1:
+        print("Error: --timeout, when provided, and --max-tokens must be positive", file=sys.stderr)
         return 2
 
     api_key: str | None = None

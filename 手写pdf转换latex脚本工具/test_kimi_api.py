@@ -33,6 +33,8 @@ class KimiApiTests(unittest.TestCase):
             self.assertEqual(args.model, "kimi-k3.1-pro")
             self.assertEqual(args.subject, "Linear Algebra")
             self.assertEqual(args.subject_id, "MATH-101")
+            self.assertIsNone(args.timeout)
+            self.assertEqual(args.max_tokens, 131072)
 
     def test_resolve_pdf_input_accepts_folder_with_one_pdf(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -231,6 +233,43 @@ class KimiApiTests(unittest.TestCase):
                 )
         self.assertIn("HTTP 400", str(caught.exception))
         self.assertNotIn(api_key, str(caught.exception))
+
+    def test_timeout_explains_that_the_request_may_have_been_processed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            image = Path(directory) / "page.jpg"
+            image.write_bytes(b"fake-jpeg")
+            with patch(
+                "urllib.request.urlopen",
+                side_effect=TimeoutError("The read operation timed out"),
+            ):
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    r"timed out after 5 seconds.*may have processed.*do not retry blindly",
+                ):
+                    converter.transcribe_images(
+                        [image],
+                        api_url="https://api.example.test/v1/chat/completions",
+                        model="kimi-k3.1-pro",
+                        api_key="mock-secret",
+                        timeout=5,
+                        max_tokens=1234,
+                    )
+
+    def test_empty_content_reports_finish_reason_and_message_fields(self) -> None:
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"empty transcription.*finish_reason=length.*message fields: content, reasoning_content",
+        ):
+            converter.response_text(
+                {
+                    "choices": [
+                        {
+                            "finish_reason": "length",
+                            "message": {"content": "", "reasoning_content": "in progress"},
+                        }
+                    ]
+                }
+            )
 
     def test_render_diagrams_replaces_marker_and_writes_pdf(self) -> None:
         try:

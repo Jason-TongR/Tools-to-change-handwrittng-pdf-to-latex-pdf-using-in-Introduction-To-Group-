@@ -93,5 +93,6 @@ python3 "手写pdf转换latex脚本工具/handwriting_to_latex.py" "你的手写
 - **`pdflatex` 找不到或宏包缺失**：确认 `texlive-latex-base`、`texlive-latex-extra`、`texlive-fonts-recommended` 和 `texlive-science` 已安装。
 - **提示缺少 Matplotlib**：激活 `.venv` 后运行 `python -m pip install matplotlib`。
 - **API 返回 HTTP 401/400**：检查 Key、模型名、接口地址、图片输入权限和账户额度；不要把 Key 发给别人。
+- **提示 `empty transcription`**：这通常表示模型的推理耗尽了完成 token 上限。脚本默认使用较高的上限；如果仍发生，可增加 `--max-completion-tokens`，并检查错误中的 `finish_reason`。
 - **LaTeX 编译报错**：打开 `transcription.tex`，从编译日志第一条 `!` 错误开始检查；通常需要修正模型生成的 LaTeX。
-- **输入 PDF 含有很多页或请求超时**：在转换命令中加 `--dpi 100` 降低图片分辨率，或将 PDF 拆成较短的部分。
+- **输入 PDF 含有很多页或请求超时**：默认不设置 API 请求超时上限，程序会等待服务端返回。若希望主动限制等待时间，可加 `--timeout 600`；也可以加 `--dpi 100` 降低图片分辨率，或将 PDF 拆成较短的部分。如果显式设置的请求发生超时，服务端可能已经接受并处理请求（仍可能产生费用），请先查看平台的请求或账单记录，不要连续重复运行同一请求。
