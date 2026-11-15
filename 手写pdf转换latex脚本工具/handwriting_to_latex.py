@@ -660,8 +660,9 @@ def main() -> int:
         print(f"Error: {error}", file=sys.stderr)
         return 1
 
-    print(f"Created output in: {output_dir}")
-    print(f"  {output_pdf.name}")
+    print("Success! The handwritten PDF was converted successfully.")
+    print(f"Output folder: {output_dir}")
+    print(f"Final PDF: {output_pdf}")
     return 0
 
 
