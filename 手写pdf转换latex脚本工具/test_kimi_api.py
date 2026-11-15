@@ -18,8 +18,21 @@ SPEC.loader.exec_module(converter)
 
 class KimiApiTests(unittest.TestCase):
     def test_default_model_is_kimi_k31_pro(self) -> None:
-        with patch("sys.argv", ["handwriting_to_latex.py", "input.pdf"]):
-            self.assertEqual(converter.parse_args().model, "kimi-k3.1-pro")
+        with patch(
+            "sys.argv",
+            [
+                "handwriting_to_latex.py",
+                "input.pdf",
+                "--subject",
+                "Linear Algebra",
+                "--subject-id",
+                "MATH-101",
+            ],
+        ):
+            args = converter.parse_args()
+            self.assertEqual(args.model, "kimi-k3.1-pro")
+            self.assertEqual(args.subject, "Linear Algebra")
+            self.assertEqual(args.subject_id, "MATH-101")
 
     def test_resolve_pdf_input_accepts_folder_with_one_pdf(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -40,18 +53,58 @@ class KimiApiTests(unittest.TestCase):
                 converter.resolve_pdf_input(folder)
 
     def test_diagram_rendering_is_enabled_by_default_and_can_be_disabled(self) -> None:
-        with patch("sys.argv", ["handwriting_to_latex.py", "input.pdf"]):
+        with patch(
+            "sys.argv",
+            [
+                "handwriting_to_latex.py",
+                "input.pdf",
+                "--subject",
+                "Linear Algebra",
+                "--subject-id",
+                "MATH-101",
+            ],
+        ):
             self.assertTrue(converter.parse_args().draw_diagrams)
         with patch(
-            "sys.argv", ["handwriting_to_latex.py", "input.pdf", "--no-draw-diagrams"]
+            "sys.argv",
+            [
+                "handwriting_to_latex.py",
+                "input.pdf",
+                "--subject",
+                "Linear Algebra",
+                "--subject-id",
+                "MATH-101",
+                "--no-draw-diagrams",
+            ],
         ):
             self.assertFalse(converter.parse_args().draw_diagrams)
 
     def test_default_template_uses_current_repository_location(self) -> None:
         template = converter.default_template_path()
         self.assertEqual(template.name, "TemplateHW.tex")
-        self.assertEqual(template.parent.name, "Uri Onn作业模板")
+        self.assertEqual(template.parent.name, "作业模板")
         self.assertTrue(template.is_file())
+
+    def test_build_template_replaces_subject_metadata(self) -> None:
+        template = converter.default_template_path()
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "transcription.tex"
+            converter.build_template_document(
+                template,
+                output,
+                r"\begin{ej}x\end{ej}",
+                subject="Linear Algebra",
+                subject_id="MATH-101",
+                author="Student",
+                student_id="123",
+                assignment="2",
+            )
+            result = output.read_text(encoding="utf-8")
+
+        self.assertIn(r"\rhead{Linear Algebra - MATH-101\\ Guangdong Technion}", result)
+        self.assertIn(r"\lhead{{\large\scshape Homework Assignment 2  \\ Winter - 2026}}", result)
+        self.assertNotIn("__SUBJECT_", result)
+        self.assertNotIn("__ASSIGNMENT__", result)
 
     def start_server(self, handler_type: type[BaseHTTPRequestHandler]):
         server = ThreadingHTTPServer(("127.0.0.1", 0), handler_type)

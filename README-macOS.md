@@ -6,7 +6,7 @@
 
 1. 在 VS Code 中打开本仓库文件夹，也就是里面能看到 `README.md` 的那一层目录。
 2. 在 VS Code 左侧资源管理器中找到 `你的手写笔记请放在这个文件夹` 文件夹。如果没看到文件列表，可点击左侧文件图标，或按 `Cmd+Shift+E`。
-3. 用 Finder 找到你的手写笔记 PDF，将它复制并粘贴到 `你的手写笔记请放在这个文件夹` 里面。不要把 PDF 放到 `Uri Onn作业模板` 或 `手写pdf转换latex脚本工具` 里。
+3. 用 Finder 找到你的手写笔记 PDF，将它复制并粘贴到 `你的手写笔记请放在这个文件夹` 里面。不要把 PDF 放到 `作业模板` 或 `手写pdf转换latex脚本工具` 里。
 4. 回到 VS Code，展开该文件夹，确认里面有且只有一个要转换的 PDF。无需改文件名；如果里面有多个 PDF，请先把本次不转换的 PDF 暂时移到其他位置。
 5. 选择“终端 → 新建终端”。输入 `ls` 后按 Enter，应能看到 `README.md` 和 `手写pdf转换latex脚本工具`。如果没有，请在 VS Code 中重新打开正确的文件夹。
 
@@ -95,7 +95,7 @@ test -n "$MOONSHOT_API_KEY" && echo "API key is set" || echo "API key is missing
 把命令中的姓名、学号和作业编号替换成自己的信息。命令必须在仓库根目录运行。输入路径直接指向笔记文件夹，不用填写 PDF 文件名，也不用重命名：
 
 ```bash
-python3 "手写pdf转换latex脚本工具/handwriting_to_latex.py" "你的手写笔记请放在这个文件夹" --api-url "https://api.moonshot.cn/v1/chat/completions" --model "kimi-k3.1-pro" --api-key-env MOONSHOT_API_KEY --author "StudentName" --student-id "000000" --assignment 1
+python3 "手写pdf转换latex脚本工具/handwriting_to_latex.py" "你的手写笔记请放在这个文件夹" --api-url "https://api.moonshot.cn/v1/chat/completions" --model "kimi-k3.1-pro" --api-key-env MOONSHOT_API_KEY --subject "Linear Algebra" --subject-id "MATH-101" --author "StudentName" --student-id "000000" --assignment 1
 ```
 
 图形识别默认开启，不需要额外写开关；若要关闭，可在命令末尾加 `--no-draw-diagrams`。程序会自动编译，完成后输出目录中只保留最终的 `transcription.pdf`。

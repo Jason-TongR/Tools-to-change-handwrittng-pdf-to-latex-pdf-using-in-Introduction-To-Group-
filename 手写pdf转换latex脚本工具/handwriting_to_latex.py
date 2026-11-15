@@ -24,7 +24,7 @@ DEFAULT_MODEL = "kimi-k3.1-pro"
 
 DEFAULT_PROMPT = """Transcribe the handwritten mathematical work in the attached page images into a professionally typeset mathematical LaTeX document.
 Return ONLY the content that belongs between \\begin{document} and \\end{document}; do not return a preamble, markdown fences, or explanations.
-Use the provided group-theory homework template conventions: each exercise uses \\begin{ej}...\\end{ej}, and handwritten solutions use \\begin{sol}...\\end{sol}. Use clean mathematical typesetting: display equations for displayed formulas, aligned environments for multi-line derivations, consistent spacing, and clear paragraph breaks. You may use section-like headings, theorem/proof formatting, and standard LaTeX mathematical environments only when they correspond to visible structure in the source.
+Use the provided homework template conventions: each exercise uses \\begin{ej}...\\end{ej}, and handwritten solutions use \\begin{sol}...\\end{sol}. Use clean mathematical typesetting: display equations for displayed formulas, aligned environments for multi-line derivations, consistent spacing, and clear paragraph breaks. You may use section-like headings, theorem/proof formatting, and standard LaTeX mathematical environments only when they correspond to visible structure in the source.
 
 The handwritten PDF is the sole source of truth. Preserve exactly the visible wording, mathematical meaning, notation, proof steps, order, crossed-out or annotated meaning where legible, and visible colored notes. Formatting may improve presentation, but content must not be rewritten, summarized, corrected, completed, modernized, or silently reordered. Do not add definitions, claims, explanations, proof steps, conclusions, or citations that are not visible. Do not infer missing mathematics. Represent genuinely unclear handwriting as \\textcolor{red}{[unclear: short visual description]}. Keep all LaTeX syntactically balanced. Use only standard LaTeX and the macros defined by the template. For colors use xcolor names such as red, green, orange, or blue. The source images are in page order."""
 
@@ -84,7 +84,7 @@ def resolve_pdf_input(input_path: Path) -> Path:
 def default_template_path() -> Path:
     repository_root = Path(__file__).resolve().parent.parent
     candidates = [
-        repository_root / "Uri Onn作业模板" / "TemplateHW.tex",
+        repository_root / "作业模板" / "TemplateHW.tex",
         Path(__file__).resolve().parent / "TemplateHW.tex",
     ]
     for candidate in candidates:
@@ -396,6 +396,8 @@ def build_template_document(
     output_path: Path,
     body: str,
     *,
+    subject: str | None,
+    subject_id: str | None,
     author: str | None,
     student_id: str | None,
     assignment: str | None,
@@ -436,6 +438,14 @@ def build_template_document(
         author_block = re.sub(r"Autor:\s*xxx\s*xxxxxx", lambda _: f"Autor: {author}", author_block)
     if student_id is not None:
         author_block = re.sub(r"ID:\s*xxxxxx", lambda _: f"ID: {student_id}", author_block)
+    replacements = {
+        "__SUBJECT_NAME__": subject,
+        "__SUBJECT_ID__": subject_id,
+        "__ASSIGNMENT__": assignment,
+    }
+    for placeholder, value in replacements.items():
+        if value is not None:
+            preamble = preamble.replace(placeholder, value)
     if assignment is not None:
         preamble = re.sub(
             r"Homework Assignment\s+x", lambda _: f"Homework Assignment {assignment}", preamble
@@ -474,9 +484,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--template",
         type=Path,
-        help="Teacher's TemplateHW.tex (defaults to Uri Onn作业模板/TemplateHW.tex)",
+        help="TemplateHW.tex (defaults to 作业模板/TemplateHW.tex)",
     )
     parser.add_argument("-o", "--output-dir", type=Path, help="Output folder (default: <PDF name>_latex)")
+    parser.add_argument(
+        "--subject",
+        required=True,
+        help="Subject name to place in the template header (for example, Linear Algebra)",
+    )
+    parser.add_argument(
+        "--subject-id",
+        required=True,
+        help="Subject ID/code to place after the subject name in the template header",
+    )
     parser.add_argument("--author", help="Replace the template author placeholder")
     parser.add_argument("--student-id", help="Replace the template ID placeholder")
     parser.add_argument("--assignment", help="Replace the assignment number in the header")
@@ -580,6 +600,8 @@ def main() -> int:
             template_path,
             tex_path,
             body,
+            subject=args.subject,
+            subject_id=args.subject_id,
             author=args.author,
             student_id=args.student_id,
             assignment=args.assignment,

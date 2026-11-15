@@ -6,7 +6,7 @@
 
 1. 在 VS Code 中打开本仓库文件夹，也就是里面能看到 `README.md` 的那一层目录。
 2. 在 VS Code 左侧“资源管理器”中找到 `你的手写笔记请放在这个文件夹` 文件夹。如果没看到左侧文件列表，可点击左侧文件图标，或按 `Ctrl+Shift+E`。
-3. 用 Windows 文件资源管理器找到你的手写笔记 PDF，将它复制并粘贴到 `你的手写笔记请放在这个文件夹` 里面。不要把 PDF 放到 `Uri Onn作业模板` 或 `手写pdf转换latex脚本工具` 里。
+3. 用 Windows 文件资源管理器找到你的手写笔记 PDF，将它复制并粘贴到 `你的手写笔记请放在这个文件夹` 里面。不要把 PDF 放到 `作业模板` 或 `手写pdf转换latex脚本工具` 里。
 4. 回到 VS Code，展开该文件夹，确认里面有且只有一个要转换的 PDF。无需改文件名；如果里面有多个 PDF，请先把本次不转换的 PDF 暂时移到其他位置。
 5. 在 VS Code 菜单中选择“终端 → 新建终端”。如果终端不是 PowerShell，可点终端面板右上角的下拉菜单并选择 PowerShell。
 6. 输入 `dir` 后按 Enter。输出中应能看到 `README.md` 和 `手写pdf转换latex脚本工具`。如果没有，请在 VS Code 中重新打开正确的仓库目录。
@@ -106,7 +106,7 @@ if ($env:MOONSHOT_API_KEY) { "API key is set" } else { "API key is missing" }
 把下面命令里的姓名、学号和作业编号替换成自己的信息。命令必须在仓库根目录运行。输入路径直接指向笔记文件夹，不用填写 PDF 文件名，也不用重命名：
 
 ```powershell
-python3 "手写pdf转换latex脚本工具/handwriting_to_latex.py" "你的手写笔记请放在这个文件夹" --api-url "https://api.moonshot.cn/v1/chat/completions" --model "kimi-k3.1-pro" --api-key-env MOONSHOT_API_KEY --author "StudentName" --student-id "000000" --assignment 1
+python3 "手写pdf转换latex脚本工具/handwriting_to_latex.py" "你的手写笔记请放在这个文件夹" --api-url "https://api.moonshot.cn/v1/chat/completions" --model "kimi-k3.1-pro" --api-key-env MOONSHOT_API_KEY --subject "Linear Algebra" --subject-id "MATH-101" --author "StudentName" --student-id "000000" --assignment 1
 ```
 
 默认使用 Kimi K3.1 Pro 标准模型，并要求模型只根据手写 PDF 内容进行专业数学排版；排版可以改善公式、段落和结构的呈现，但不会改写、补充或纠正原内容。程序会自动编译，完成后输出目录中只保留最终的 `transcription.pdf`。图形识别默认开启，不需要额外写开关；若要关闭，可在命令末尾加 `--no-draw-diagrams`。若平台实际显示的模型 ID 不同，可显式添加 `--model` 覆盖默认值。
